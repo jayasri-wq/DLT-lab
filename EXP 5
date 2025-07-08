@@ -1,0 +1,30 @@
+5.  import numpy as np, matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import fetch_lfw_people
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPool2D, Flatten, Dense, Dropout
+from tensorflow.keras.utils import to_categorical
+
+d = fetch_lfw_people(min_faces_per_person=70, resize=0.4)
+X, y = d.images[..., np.newaxis]/255.0, to_categorical(d.target)
+Xt, Xv, yt, yv = train_test_split(X, y, test_size=0.2)
+names = d.target_names
+
+model = Sequential([
+  Conv2D(32, (3,3), activation='relu', input_shape=X.shape[1:]), MaxPool2D(2,2),
+  Conv2D(64, (3,3), activation='relu'), MaxPool2D(2,2),
+  Flatten(), Dense(128, activation='relu'), Dropout(0.5),
+  Dense(y.shape[1], activation='softmax')
+])
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+model.fit(Xt, yt, epochs=10, batch_size=32, validation_data=(Xv, yv))
+loss, acc = model.evaluate(Xv, yv)
+print(f"Test Accuracy: {acc:.2f}")
+
+def show(i):
+  p = model.predict(Xv[i][np.newaxis])
+  print(); plt.imshow(Xv[i].squeeze(), cmap='gray')
+  plt.title(f"Predicted: {names[p.argmax()]}\nActual: {names[yv[i].argmax()]}"); plt.axis('off'); plt.show()
+
+show(5)
