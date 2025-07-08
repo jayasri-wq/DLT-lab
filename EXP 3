@@ -1,0 +1,22 @@
+3.  import numpy as np, matplotlib.pyplot as plt
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+X, y = StandardScaler().fit_transform(load_breast_cancer().data), load_breast_cancer().target.reshape(-1,1)
+X_tr, X_te, y_tr, y_te = train_test_split(X, y, test_size=0.2)
+W1, W2 = np.random.randn(30,10), np.random.randn(10,1)
+b1, b2, L, s = np.zeros((1,10)), np.zeros((1,1)), [], lambda z: 1/(1+np.exp(-z))
+
+for e in range(1000):
+ A1 = np.tanh(X_tr@W1 + b1); A2 = s(A1@W2 + b2)
+ loss = -np.mean(y_tr*np.log(A2+1e-9)+(1-y_tr)*np.log(1-A2+1e-9)); L.append(loss)
+ if e%100==0: print(f"Epoch {e}, Loss: {loss:.4f}")
+ dZ2 = A2 - y_tr; dZ1 = (dZ2@W2.T)(1-A1*2)
+ W2 -= 0.01*A1.T@dZ2; b2 -= 0.01*dZ2.sum(0)
+ W1 -= 0.01*X_tr.T@dZ1; b1 -= 0.01*dZ1.sum(0)
+
+pred = (s(np.tanh(X_te@W1 + b1) @ W2 + b2) > 0.5).astype(int)
+acc = (pred == y_te).mean() * 100
+print(f"\nTest Accuracy: {acc:.2f}%")
+plt.plot(L); plt.title("Loss"); plt.grid(); plt.show()
